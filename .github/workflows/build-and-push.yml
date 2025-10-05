@@ -6,14 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment'
+        description: 'Deployment environment (dev, uat, prod)'
         required: true
-        default: 'uat'
-        type: choice
-        options:
-          - dev
-          - uat
-          - prod
+        default: 'dev'
 
 jobs:
   build-and-push:
@@ -25,7 +20,6 @@ jobs:
 
     env:
       AWS_REGION: ca-central-1
-      ECR_REPOSITORY: spring-petclinic
       DOCKERFILE_PATH: ./Dockerfile
 
     steps:
@@ -49,9 +43,29 @@ jobs:
       - name: Set environment variables
         run: |
           ENVIRONMENT="${{ github.event.inputs.environment }}"
+          if [ -z "$ENVIRONMENT" ]; then
+            ENVIRONMENT="dev"
+          fi
           echo "APP_ENV=$ENVIRONMENT" >> $GITHUB_ENV
           echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+
+          # Assign environment-specific ECR repository
+          case "$ENVIRONMENT" in
+            dev)
+              echo "ECR_REPOSITORY=spring-petclinic-dev" >> $GITHUB_ENV
+              ;;
+            uat)
+              echo "ECR_REPOSITORY=spring-petclinic-uat" >> $GITHUB_ENV
+              ;;
+            prod)
+              echo "ECR_REPOSITORY=spring-petclinic-prod" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "Invalid environment '$ENVIRONMENT'. Using 'dev'."
+              echo "ECR_REPOSITORY=spring-petclinic-dev" >> $GITHUB_ENV
+              ;;
+          esac
 
       # 5️⃣ Make Maven wrapper executable
       - name: Make mvnw executable
