@@ -48,11 +48,11 @@ jobs:
       #     echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
       
       - name: Set environment and image tag
-          run: |
-            ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
-            echo "APP_ENV=$ENVIRONMENT" >> $GITHUB_ENV
-            echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
-            echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+        run: |
+          ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
+          echo "APP_ENV=$ENVIRONMENT" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
 
       # 5️⃣ Build Docker image
       - name: Build Docker image
