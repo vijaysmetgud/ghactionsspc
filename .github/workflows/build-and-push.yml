@@ -40,12 +40,19 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4️⃣ Set environment and image tag
-      - name: Set environment variables
-        run: |
-          echo "APP_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-          echo "IMAGE_TAG=${{ github.event.inputs.environment }}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+      # # 4️⃣ Set environment and image tag
+      # - name: Set environment variables
+      #   run: |
+      #     echo "APP_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+      #     echo "IMAGE_TAG=${{ github.event.inputs.environment }}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      #     echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+      
+      - name: Set environment and image tag
+          run: |
+            ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
+            echo "APP_ENV=$ENVIRONMENT" >> $GITHUB_ENV
+            echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
+            echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
 
       # 5️⃣ Build Docker image
       - name: Build Docker image
