@@ -6,9 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment (dev, uat, prod)'
+        description: 'Deployment environment'
         required: true
-        default: 'dev'
+        default: 'uat'
+        type: choice
+        options:
+          - dev
+          - uat
+          - prod
 
 jobs:
   build-and-push:
@@ -43,7 +48,7 @@ jobs:
       # 4️⃣ Set environment and image tag safely
       - name: Set environment variables
         run: |
-          ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
+          ENVIRONMENT="${{ github.event.inputs.environment }}"
           echo "APP_ENV=$ENVIRONMENT" >> $GITHUB_ENV
           echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
