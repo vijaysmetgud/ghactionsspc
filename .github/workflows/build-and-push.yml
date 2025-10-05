@@ -1,6 +1,5 @@
 name: Build and Push Spring PetClinic Docker Image
 
-# Trigger on push to main or manual trigger
 on:
   push:
     branches: [ main ]
@@ -16,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write   # Required for OIDC
+      id-token: write
       contents: read
 
     env:
@@ -41,25 +40,26 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4️⃣ Set environment based on workflow input
+      # 4️⃣ Set environment and image tag
       - name: Set environment variables
         run: |
           echo "APP_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
           echo "IMAGE_TAG=${{ github.event.inputs.environment }}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
 
-      # 5️⃣ Build Docker image (no secrets inside image)
+      # 5️⃣ Build Docker image
       - name: Build Docker image
         run: |
           docker build \
-            -t ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -f ${{ env.DOCKERFILE_PATH }} .
 
       # 6️⃣ Push Docker image to ECR
       - name: Push Docker image
         run: |
-          docker push ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       # 7️⃣ Output deployed image info
       - name: Output deployed image info
         run: |
-          echo "✅ Docker image pushed: ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "✅ Docker image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
