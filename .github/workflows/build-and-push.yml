@@ -1,25 +1,29 @@
 name: Build and Push Spring PetClinic Docker Image to ECR
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment (dev, uat, prod)'
+        description: 'Select deployment environment'
         required: true
         default: 'dev'
+        type: choice
+        options:
+          - dev
+          - uat
+          - prod
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write
+      id-token: write  # Required for OIDC
       contents: read
 
     env:
       AWS_REGION: ca-central-1
+      ECR_REPOSITORY: spring-petclinic
       DOCKERFILE_PATH: ./Dockerfile
 
     steps:
@@ -39,33 +43,13 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4️⃣ Set environment and image tag safely
+      # 4️⃣ Set environment and image tag
       - name: Set environment variables
         run: |
           ENVIRONMENT="${{ github.event.inputs.environment }}"
-          if [ -z "$ENVIRONMENT" ]; then
-            ENVIRONMENT="dev"
-          fi
           echo "APP_ENV=$ENVIRONMENT" >> $GITHUB_ENV
           echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
-
-          # Assign environment-specific ECR repository
-          case "$ENVIRONMENT" in
-            dev)
-              echo "ECR_REPOSITORY=spring-petclinic-dev" >> $GITHUB_ENV
-              ;;
-            uat)
-              echo "ECR_REPOSITORY=spring-petclinic-uat" >> $GITHUB_ENV
-              ;;
-            prod)
-              echo "ECR_REPOSITORY=spring-petclinic-prod" >> $GITHUB_ENV
-              ;;
-            *)
-              echo "Invalid environment '$ENVIRONMENT'. Using 'dev'."
-              echo "ECR_REPOSITORY=spring-petclinic-dev" >> $GITHUB_ENV
-              ;;
-          esac
 
       # 5️⃣ Make Maven wrapper executable
       - name: Make mvnw executable
