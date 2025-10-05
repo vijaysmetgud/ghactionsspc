@@ -23,7 +23,6 @@ jobs:
 
     env:
       AWS_REGION: ca-central-1
-      ECR_REPOSITORY: spring-petclinic
       DOCKERFILE_PATH: ./Dockerfile
 
     steps:
@@ -43,13 +42,23 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4️⃣ Set environment and image tag
+      # 4️⃣ Set environment and image tag, select ECR repository
       - name: Set environment variables
         run: |
           ENVIRONMENT="${{ github.event.inputs.environment }}"
           echo "APP_ENV=$ENVIRONMENT" >> $GITHUB_ENV
           echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
+
+          # Select the correct ECR repository based on environment
+          if [ "$ENVIRONMENT" == "prod" ]; then
+            ECR_REPOSITORY="spring-petclinic-prod"
+          elif [ "$ENVIRONMENT" == "uat" ]; then
+            ECR_REPOSITORY="spring-petclinic-uat"
+          else
+            ECR_REPOSITORY="spring-petclinic-dev"
+          fi
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
 
       # 5️⃣ Make Maven wrapper executable
       - name: Make mvnw executable
