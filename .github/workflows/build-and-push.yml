@@ -1,0 +1,65 @@
+name: Build and Push Spring PetClinic Docker Image
+
+# Trigger on push to main or manual trigger
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment (dev, uat, prod)'
+        required: true
+        default: 'dev'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write   # Required for OIDC
+      contents: read
+
+    env:
+      AWS_REGION: eu-central-1
+      ECR_REPOSITORY: spring-petclinic
+      DOCKERFILE_PATH: ./Dockerfile
+
+    steps:
+      # 1️⃣ Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configure AWS credentials via OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::745487377768:role/GitHubActionsRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3️⃣ Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4️⃣ Set environment based on workflow input
+      - name: Set environment variables
+        run: |
+          echo "APP_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.event.inputs.environment }}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      # 5️⃣ Build Docker image (no secrets inside image)
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG \
+            -f ${{ env.DOCKERFILE_PATH }} .
+
+      # 6️⃣ Push Docker image to ECR
+      - name: Push Docker image
+        run: |
+          docker push ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # 7️⃣ Output deployed image info
+      - name: Output deployed image info
+        run: |
+          echo "✅ Docker image pushed: ${{ steps.ecr-login.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG"
