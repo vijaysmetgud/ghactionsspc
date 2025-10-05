@@ -1,4 +1,4 @@
-name: Build and Push Spring PetClinic Docker Image
+name: Build and Push Spring PetClinic Docker Image to ecr
 
 on:
   push:
