@@ -48,23 +48,27 @@ jobs:
           echo "IMAGE_TAG=$ENVIRONMENT-${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "ECR_REGISTRY=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_ENV
 
-      # 5️⃣ Build Spring Boot JAR
+      # 5️⃣ Make Maven wrapper executable
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
+
+      # 6️⃣ Build Spring Boot JAR
       - name: Build Spring Boot JAR
         run: ./mvnw clean package -DskipTests
 
-      # 6️⃣ Build Docker image
+      # 7️⃣ Build Docker image
       - name: Build Docker image
         run: |
           docker build \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -f ${{ env.DOCKERFILE_PATH }} .
 
-      # 7️⃣ Push Docker image to ECR
+      # 8️⃣ Push Docker image to ECR
       - name: Push Docker image
         run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      # 8️⃣ Output deployed image info
+      # 9️⃣ Output deployed image info
       - name: Output deployed image info
         run: |
           echo "✅ Docker image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
